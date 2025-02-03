@@ -1,0 +1,55 @@
+
+// // package main
+
+// import (
+// 	"archive/zip"
+// 	"encoding/xml"
+// 	"fmt"
+// 	"io"
+// 	"strings"
+// )
+
+// // Estructura XML de una celda
+// type Cell struct {
+// 	Value string `xml:"v"`
+// }
+
+// func main() {
+// 	r, err := zip.OpenReader("archivo.xlsx")
+// 	if err != nil {
+// 		fmt.Println("Error al abrir el archivo:", err)
+// 		return
+// 	}
+// 	defer r.Close()
+
+// 	for _, file := range r.File {
+// 		if strings.Contains(file.Name, "xl/worksheets/sheet1.xml") {
+// 			f, err := file.Open()
+// 			if err != nil {
+// 				fmt.Println("Error al abrir sheet1.xml:", err)
+// 				return
+// 			}
+// 			defer f.Close()
+
+// 			decoder := xml.NewDecoder(f)
+// 			for {
+// 				token, err := decoder.Token()
+// 				if err == io.EOF {
+// 					break
+// 				} else if err != nil {
+// 					fmt.Println("Error leyendo XML:", err)
+// 					return
+// 				}
+
+// 				switch se := token.(type) {
+// 				case xml.StartElement:
+// 					if se.Name.Local == "v" {
+// 						var c Cell
+// 						decoder.DecodeElement(&c, &se)
+// 						fmt.Println("Valor de celda:", c.Value)
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// }
