@@ -1,29 +1,31 @@
 package main
 
 import (
-	"encoding/json"
+	"archive/zip"
+	"bytes"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"os"
-	"strconv"
 )
 
-// Estructura para leer `sharedStrings.xml`
 type SharedStrings struct {
-	XMLName xml.Name  `xml:"sst"`
-	Strings []SSValue `xml:"si>t"`
+	XMLName xml.Name `xml:"sst"`
+	Strings []Text   `xml:"si"`
 }
 
-type SSValue struct {
-	Text string `xml:",chardata"`
+type Text struct {
+	Text string `xml:"t"`
 }
 
-// Estructura para leer `sheet1.xml`
+// Estructuras para mapear sheet1.xml
 type Worksheet struct {
-	XMLName   xml.Name `xml:"worksheet"`
-	SheetData struct {
-		Rows []Row `xml:"row"`
-	} `xml:"sheetData"`
+	XMLName   xml.Name  `xml:"worksheet"`
+	SheetData SheetData `xml:"sheetData"`
+}
+
+type SheetData struct {
+	Rows []Row `xml:"row"`
 }
 
 type Row struct {
@@ -31,135 +33,134 @@ type Row struct {
 }
 
 type Cell struct {
-	Type  string `xml:"t,attr,omitempty"`
-	Value string `xml:"v"`
+	Ref   string `xml:"r,attr"` // Posición (A1, B1, etc.)
+	Type  string `xml:"t,attr"` // Tipo (s = shared string)
+	Value string `xml:"v"`      // Índice o valor
 }
 
 func main() {
-	// Leer `sharedStrings.xml`
-	sharedStringsMap, err := leerSharedStrings("xl/sharedStrings.xml")
+
+	file, err := os.Open("rep.xlsx")
+
 	if err != nil {
-		fmt.Println("Error leyendo sharedStrings:", err)
+		fmt.Println(err)
+	}
+	defer file.Close()
+	start, err := file.Stat()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	zipData := make([]byte, start.Size())
+	_, err = file.Read(zipData)
+
+	if err != nil && err != io.EOF {
+		fmt.Println("Error al leer el archivo ZIP:", err)
 		return
 	}
 
-	// Leer `sheet1.xml`
-	ws, err := leerWorksheet("xl/worksheets/sheet1.xml")
+	reader, err := zip.NewReader(bytes.NewReader(zipData), start.Size())
 	if err != nil {
-		fmt.Println("Error leyendo sheet1:", err)
+		fmt.Println("Error al abrir el ZIP en memoria:", err)
 		return
 	}
+	// sharedStringsMap := make(map[int]string)
 
-	// Convertir a JSON dinámico
-	jsonData, err := convertirAJSON(ws, sharedStringsMap)
-	if err != nil {
-		fmt.Println("Error convirtiendo a JSON:", err)
-		return
-	}
+	// for index, file := range reader.File {
 
-	// Guardar JSON
-	err = os.WriteFile("output.json", jsonData, 0644)
-	if err != nil {
-		fmt.Println("Error guardando JSON:", err)
-		return
-	}
+	// 	if index == 7 {
+	// 		fmt.Println(index, " Archivo dentro del ZIP: ", file.Name)
+	// 		rc, err := file.Open()
 
-	fmt.Println("Datos exportados a output.json")
-}
+	// 		if err != nil {
+	// 			fmt.Println("Error al abrir archivo dentro del ZIP:", err)
+	// 			continue
+	// 		}
+	// 		// Leer el contenido del archivo
+	// 		var sst SharedStrings
+	// 		// le el contendi y genera la decodificacion con xml me retorna *
+	// 		decoder := xml.NewDecoder(rc)
+	// 		// uso la decodficacion  generado y aplico en metodo para formar en un lenjuate entendible
+	// 		if err := decoder.Decode(&sst); err != nil {
+	// 			fmt.Println("Error al parsear XML:", err)
+	// 			return
+	// 		}
+	// 		for i, si := range sst.Strings {
+	// 			// clearSpace := strings.TrimSpace(si.Text)
+	// 			// format := strings.ReplaceAll(clearSpace, " ", "_")
+	// 			// format = strings.ReplaceAll(format, ".", "-")
+	// 			// fmt.Printf("%v i -> %s \n", i, format)
+	// 			sharedStringsMap[i] = strings.TrimSpace(si.Text)
+	// 		}
+	// 	}
 
-// 📌 Función para leer `sharedStrings.xml` y mapear índices a valores
-func leerSharedStrings(filename string) (map[int]string, error) {
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
+	// }
 
-	var sst SharedStrings
-	err = xml.Unmarshal(data, &sst)
-	if err != nil {
-		return nil, err
-	}
+	// for _, s := range sharedStringsMap {
 
-	sharedStrings := make(map[int]string)
-	for i, s := range sst.Strings {
-		sharedStrings[i] = s.Text
-	}
-	return sharedStrings, nil
-}
+	// 	fmt.Println(s)
+	// }
 
-// 📌 Función para leer `sheet1.xml`
-func leerWorksheet(filename string) (*Worksheet, error) {
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
+	for index, file := range reader.File {
 
-	var ws Worksheet
-	err = xml.Unmarshal(data, &ws)
-	if err != nil {
-		return nil, err
-	}
-	return &ws, nil
-}
+		if index == 4 {
+			fmt.Printf("%d -> %v \n", index, file.Name)
+			rc, err := file.Open()
 
-// 📌 Convertir los datos a JSON dinámicamente
-func convertirAJSON(ws *Worksheet, sharedStringsMap map[int]string) ([]byte, error) {
-	if len(ws.SheetData.Rows) == 0 {
-		return nil, fmt.Errorf("la hoja está vacía")
-	}
-
-	// 📌 Obtener cabeceras de la primera fila
-	var cabeceras []string
-	for _, cell := range ws.SheetData.Rows[0].Cells {
-		if cell.Type == "s" {
-			index, err := strconv.Atoi(cell.Value)
-			if err == nil {
-				cabeceras = append(cabeceras, sharedStringsMap[index])
-			}
-		} else {
-			cabeceras = append(cabeceras, cell.Value)
-		}
-	}
-
-	// 📌 Recorrer las filas y mapear los valores a las cabeceras
-	var registros []map[string]interface{}
-	for i, row := range ws.SheetData.Rows {
-		if i == 0 {
-			continue // Saltar la fila de cabeceras
-		}
-
-		registro := make(map[string]interface{})
-		for j, cell := range row.Cells {
-			if j >= len(cabeceras) {
-				continue // Evitar desbordamiento si hay más columnas de lo esperado
+			if err != nil {
+				fmt.Println("Error al abrir archivo dentro del ZIP:", err)
 			}
 
-			var valor interface{}
-			if cell.Type == "s" { // Si es shared string
-				index, err := strconv.Atoi(cell.Value)
-				if err == nil {
-					valor = sharedStringsMap[index]
-				} else {
-					valor = cell.Value
-				}
-			} else {
-				// Convertir valores numéricos si es posible
-				if num, err := strconv.Atoi(cell.Value); err == nil {
-					valor = num
-				} else if numF, err := strconv.ParseFloat(cell.Value, 64); err == nil {
-					valor = numF
-				} else {
-					valor = cell.Value
-				}
+			var dateSheet Worksheet
+
+			decoder := xml.NewDecoder(rc)
+
+			if err := decoder.Decode(&dateSheet); err != nil {
+				fmt.Println("Error al parsear XML:", err)
+				return
+
 			}
 
-			// Asignar el valor al mapa con la cabecera correspondiente
-			registro[cabeceras[j]] = valor
 		}
 
-		registros = append(registros, registro)
 	}
 
-	// Convertir a JSON
-	return json.MarshalIndent(registros, "", "    ")
+	// for index, file := range reader.File {
+
+	// 	if index == 4 {
+	// 		rc, err := file.Open()
+
+	// 		if err != nil {
+	// 			fmt.Println("Error al abrir archivo dentro del ZIP:", err)
+	// 			continue
+	// 		}
+
+	// 		var ws Worksheet
+
+	// 		decoder := xml.NewDecoder(rc)
+
+	// 		if err := decoder.Decode(&ws); err != nil {
+	// 			fmt.Println("Error al parsear XML:", err)
+	// 			return
+	// 		}
+
+	// 		for _, row := range ws.SheetData.Rows {
+	// 			for _, cell := range row.Cells {
+	// 				if cell.Type == "s" {
+	// 					index, err := strconv.Atoi(cell.Value)
+	// 					if err == nil {
+	// 						value := strings.Trim(string(cell.Value), "")
+
+	// 						fmt.Printf("Celda %s -> %s -> %s\n", cell.Ref, sharedStringsMap[index], value)
+	// 					} else {
+
+	// 						fmt.Printf("Celda %s -> %s\n", cell.Ref, cell.Value)
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+
+	// 	}
+	// }
+
 }
