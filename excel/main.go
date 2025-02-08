@@ -43,7 +43,7 @@ type Cell struct {
 
 func main() {
 
-	file, err := os.Open("rep.xlsx")
+	file, err := os.Open("./orden.xlsx")
 
 	if err != nil {
 		fmt.Println(err)
@@ -71,7 +71,7 @@ func main() {
 
 	for index, file := range reader.File {
 
-		if index == 7 {
+		if file.Name == "xl/sharedStrings.xml" {
 			fmt.Println(index, " Archivo dentro del ZIP: ", file.Name)
 			rc, err := file.Open()
 
@@ -98,7 +98,6 @@ func main() {
 		}
 
 	}
-
 	// for _, s := range sharedStringsMap {
 
 	// }
@@ -108,7 +107,7 @@ func main() {
 
 	for index, file := range reader.File {
 
-		if index == 4 {
+		if file.Name == "xl/worksheets/sheet1.xml" {
 			fmt.Printf("%d -> %v \n", index, file.Name)
 			rc, err := file.Open()
 
@@ -128,6 +127,7 @@ func main() {
 			// var headers []string
 			var headers2 map[string]interface{} = make(map[string]interface{})
 			for indexRow, row := range dataSheet.SheetData.Rows {
+
 				if indexRow == 0 {
 
 					for _, cell := range row.Cells {
@@ -152,20 +152,28 @@ func main() {
 					}
 				}
 				dataCel := make(map[string]interface{})
-				for _, cell := range row.Cells {
-					indexExce, err := strconv.Atoi(cell.Value)
-					if err == nil {
-						// fmt.Println(index, "-> ", sharedStringsMap[indexExce])
-						value := string(rune(cell.Ref[0]))
-						valueH, ok := headers2[value].(string)
-						if ok {
-							dataCel[valueH] = sharedStringsMap[indexExce]
+				// mal la lectura de las cabexxeras
+				if indexRow == 4 {
+					fmt.Println(headers2)
+					fmt.Println(row)
+
+					for _, cell := range row.Cells {
+						indexExce, err := strconv.Atoi(cell.Value)
+						if err == nil {
+							// fmt.Println(index, "-> ", sharedStringsMap[indexExce])
+							value := string(rune(cell.Ref[0]))
+							valueH, ok := headers2[value].(string)
+							if ok {
+								dataCel[valueH] = sharedStringsMap[indexExce]
+
+							}
+
+							//
 						}
 
-						//
 					}
-
 				}
+
 				if indexRow > 0 {
 
 					dataExcel = append(dataExcel, dataCel)
@@ -185,7 +193,7 @@ func main() {
 
 	// Imprimir JSON
 
-	test, err := os.Create("test.json")
+	test, err := os.Create("test2.json")
 
 	if err != nil {
 		fmt.Println("error creacion ")
