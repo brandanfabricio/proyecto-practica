@@ -3,10 +3,13 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"os"
+	"strconv"
+	"strings"
 )
 
 type SharedStrings struct {
@@ -64,42 +67,44 @@ func main() {
 		fmt.Println("Error al abrir el ZIP en memoria:", err)
 		return
 	}
-	// sharedStringsMap := make(map[int]string)
+	sharedStringsMap := make(map[int]string)
 
-	// for index, file := range reader.File {
+	for index, file := range reader.File {
 
-	// 	if index == 7 {
-	// 		fmt.Println(index, " Archivo dentro del ZIP: ", file.Name)
-	// 		rc, err := file.Open()
+		if index == 7 {
+			fmt.Println(index, " Archivo dentro del ZIP: ", file.Name)
+			rc, err := file.Open()
 
-	// 		if err != nil {
-	// 			fmt.Println("Error al abrir archivo dentro del ZIP:", err)
-	// 			continue
-	// 		}
-	// 		// Leer el contenido del archivo
-	// 		var sst SharedStrings
-	// 		// le el contendi y genera la decodificacion con xml me retorna *
-	// 		decoder := xml.NewDecoder(rc)
-	// 		// uso la decodficacion  generado y aplico en metodo para formar en un lenjuate entendible
-	// 		if err := decoder.Decode(&sst); err != nil {
-	// 			fmt.Println("Error al parsear XML:", err)
-	// 			return
-	// 		}
-	// 		for i, si := range sst.Strings {
-	// 			// clearSpace := strings.TrimSpace(si.Text)
-	// 			// format := strings.ReplaceAll(clearSpace, " ", "_")
-	// 			// format = strings.ReplaceAll(format, ".", "-")
-	// 			// fmt.Printf("%v i -> %s \n", i, format)
-	// 			sharedStringsMap[i] = strings.TrimSpace(si.Text)
-	// 		}
-	// 	}
+			if err != nil {
+				fmt.Println("Error al abrir archivo dentro del ZIP:", err)
+				continue
+			}
+			// Leer el contenido del archivo
+			var sst SharedStrings
+			// le el contendi y genera la decodificacion con xml me retorna *
+			decoder := xml.NewDecoder(rc)
+			// uso la decodficacion  generado y aplico en metodo para formar en un lenjuate entendible
+			if err := decoder.Decode(&sst); err != nil {
+				fmt.Println("Error al parsear XML:", err)
+				return
+			}
+			for i, si := range sst.Strings {
+				// clearSpace := strings.TrimSpace(si.Text)
+				// format := strings.ReplaceAll(clearSpace, " ", "_")
+				// format = strings.ReplaceAll(format, ".", "-")
+				// fmt.Printf("%v i -> %s \n", i, format)
+				sharedStringsMap[i] = strings.TrimSpace(si.Text)
+			}
+		}
 
-	// }
+	}
 
 	// for _, s := range sharedStringsMap {
 
-	// 	fmt.Println(s)
 	// }
+
+	// dataExcel := map[string]interface{}
+	var dataExcel []map[string]interface{}
 
 	for index, file := range reader.File {
 
@@ -109,21 +114,83 @@ func main() {
 
 			if err != nil {
 				fmt.Println("Error al abrir archivo dentro del ZIP:", err)
+
 			}
 
-			var dateSheet Worksheet
+			var dataSheet Worksheet
 
 			decoder := xml.NewDecoder(rc)
 
-			if err := decoder.Decode(&dateSheet); err != nil {
+			if err := decoder.Decode(&dataSheet); err != nil {
 				fmt.Println("Error al parsear XML:", err)
 				return
+			}
+			// var headers []string
+			var headers2 map[string]interface{} = make(map[string]interface{})
+			for indexRow, row := range dataSheet.SheetData.Rows {
+				if indexRow == 0 {
+
+					for _, cell := range row.Cells {
+						if cell.Type == "s" {
+							indexExce, err := strconv.Atoi(cell.Value)
+							if err == nil {
+								clearSpace := strings.TrimSpace(sharedStringsMap[indexExce])
+
+								format := strings.ReplaceAll(strings.ReplaceAll(clearSpace, "/", "_"), " ", "_")
+
+								format = strings.ReplaceAll(format, ".", "_")
+								// headers = append(headers, format)
+								// header := make(map[string]interface{})
+								value := string(rune(cell.Ref[0]))
+								// header[value] = format
+								// headers2 = append(headers2, header)
+								headers2[value] = format
+							}
+
+						}
+
+					}
+				}
+				dataCel := make(map[string]interface{})
+				for _, cell := range row.Cells {
+					indexExce, err := strconv.Atoi(cell.Value)
+					if err == nil {
+						// fmt.Println(index, "-> ", sharedStringsMap[indexExce])
+						value := string(rune(cell.Ref[0]))
+						valueH, ok := headers2[value].(string)
+						if ok {
+							dataCel[valueH] = sharedStringsMap[indexExce]
+						}
+
+						//
+					}
+
+				}
+				if indexRow > 0 {
+
+					dataExcel = append(dataExcel, dataCel)
+				}
 
 			}
-
 		}
 
 	}
+
+	fmt.Println()
+	jsonData, err := json.MarshalIndent(dataExcel, "", "  ")
+	if err != nil {
+		fmt.Println("Error al convertir a JSON:", err)
+		return
+	}
+
+	// Imprimir JSON
+
+	test, err := os.Create("test.json")
+
+	if err != nil {
+		fmt.Println("error creacion ")
+	}
+	test.WriteString(string(jsonData))
 
 	// for index, file := range reader.File {
 
