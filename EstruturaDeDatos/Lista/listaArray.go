@@ -29,21 +29,20 @@ func (l *Lista) Inserta(x int, p int) {
 		return
 	}
 
-	for q := l.utl; q > p; q-- {
-		fmt.Println(p)
-		fmt.Println(q)
-		fmt.Println(q + 1)
-		fmt.Println(x)
-		fmt.Println(l.elementos)
-		fmt.Println(l.elementos[q])
+	for q := l.utl; q >= p; q-- {
 		l.elementos[q+1] = l.elementos[q]
-
 	}
-
-	// for index := range list.elementos {
-	// 	list.elementos[index+1] = list.elementos[index]
-	// }
 	l.utl = l.utl + 1
 	l.elementos[p] = x
+}
 
+func (l *Lista) Suprime(p int) {
+	if p > l.utl || p < 0 {
+		fmt.Println("La posicion no existe")
+		return
+	}
+	l.utl = l.utl - 1
+	for q := p; q <= l.utl; q++ {
+		l.elementos[q] = l.elementos[q+1]
+	}
 }
