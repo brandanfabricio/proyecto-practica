@@ -46,3 +46,12 @@ func (l *Lista) Suprime(p int) {
 		l.elementos[q] = l.elementos[q+1]
 	}
 }
+
+func (l *Lista) Localizar(x int) int {
+	for q := 0; q <= l.utl; q++ {
+		if x == l.elementos[q] {
+			return q
+		}
+	}
+	return -1
+}

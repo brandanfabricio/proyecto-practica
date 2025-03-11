@@ -6,17 +6,10 @@ import (
 )
 
 func main() {
-	list := lista.NewListArray()
+	Newlista := lista.NewListPuntero()
 
-	list.Inserta(2, 0)
-	list.Inserta(5, 1)
-	list.Inserta(7, 2)
-	list.Inserta(6, 3)
-	list.Inserta(8, 2)
+	Newlista.Insertar(10, 1)
 
-	// data := []interface{}{}
-	fmt.Println(list)
-	list.Suprime(0)
+	fmt.Println(Newlista)
 
-	fmt.Println(list)
 }
