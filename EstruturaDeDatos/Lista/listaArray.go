@@ -1,6 +1,8 @@
 package lista
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const log_max = 100
 
@@ -10,12 +12,22 @@ type Lista struct {
 }
 
 func NewListArray() *Lista {
+
 	return &Lista{}
 }
 
+//	func (list *Lista) Fin(p int) int {
+//		if p > log_max {
+//			fmt.Println("Fuera de rango")
+//			return -1
+//		}
+//		return list.elementos[p-1]
+//	}
 func (list *Lista) Fin() int {
-	fmt.Println("Posicion")
 	return list.utl + 1
+}
+func (list *Lista) Len() int {
+	return list.utl
 }
 
 func (l *Lista) Inserta(x int, p int) {
@@ -54,4 +66,38 @@ func (l *Lista) Localizar(x int) int {
 		}
 	}
 	return -1
+}
+func (l *Lista) Recupera(p int) int {
+
+	if p >= l.Fin() {
+		fmt.Println("Dato no existe ")
+		return -1
+	}
+	return l.elementos[p]
+}
+func (l *Lista) Siguiente(p int) int {
+	if p >= l.Len()-1 {
+		return -1
+	}
+	return p + 1
+}
+func (l *Lista) Anterior(p int) int {
+	if p <= 0 {
+		return -1
+	}
+	return p - 1
+}
+
+func (l *Lista) Anular() {
+	l.utl = 0
+	l.elementos = [log_max]int{}
+}
+
+func (l *Lista) Imprimir() {
+	for index, elemento := range l.elementos {
+		fmt.Printf("%d -> %d \n", index, elemento)
+		if l.Fin()-1 == index {
+			break
+		}
+	}
 }
