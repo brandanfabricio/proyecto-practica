@@ -101,3 +101,26 @@ func (l *Lista) Imprimir() {
 		}
 	}
 }
+func (l *Lista) Primero() int {
+	if l.Len() == 0 {
+		return -1 // Equivalente a FIN(L) si la lista está vacía
+	}
+	return 0
+}
+
+// func (l *Lista) Purga() {
+// 	// eliminar los duplicados
+// 	p := l.Primero()
+// 	for p != l.Fin() {
+// 		q := l.Siguiente(p)
+// 		fmt.Println(q)
+// 		for q != l.Fin() {
+// 			if l.Recupera(p) == l.Recupera(q) {
+// 				l.Suprime(q)
+// 			} else {
+// 				l.Recupera(q)
+// 			}
+// 		}
+// 		p = l.Siguiente(p)
+// 	}
+// }

@@ -12,6 +12,11 @@ func NewListPuntero() *ListaPuntero {
 	return &ListaPuntero{}
 }
 
+func (l *ListaPuntero) Fin() *ListaPuntero {
+
+	return l.sig
+}
+
 func (l *ListaPuntero) Insertar(x TipoElemento, p int) {
 	fmt.Println(x)
 	fmt.Println(p)
