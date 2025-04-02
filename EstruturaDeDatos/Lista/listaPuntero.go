@@ -14,7 +14,12 @@ func NewListPuntero() *ListaPuntero {
 
 func (l *ListaPuntero) Fin() *ListaPuntero {
 
-	return l.sig
+	q := l
+	for l.sig != nil {
+
+		q = q.sig
+	}
+	return q
 }
 
 func (l *ListaPuntero) Insertar(x TipoElemento, p int) {
