@@ -8,13 +8,20 @@ export const useAuthStore = defineStore("auth", {
 
   actions: {
     login(name, password, email) {
-      fetch("http://localhost:5000/login", {
+      console.log(name);
+      console.log(password);
+      console.log(email);
+      
+      fetch("http://localhost:5000/api/register", {
         method: "POST",
         body: JSON.stringify({
           name,
           password,
           email,
         }),
+        headers:{
+          'Content-Type': 'application/json'
+        }
       })
         .then((res) => res.json())
         .then((response) => {

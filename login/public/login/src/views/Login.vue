@@ -10,6 +10,8 @@ const authStore = useAuthStore()
 const router = useRouter()
 
 async function handleLogin() {
+    console.log(username.value,password.value,"aa@aa.com");
+    
     const success = await authStore.login(username.value, password.value,"aa@aa.com")
     if (success) {
         router.push('/dashboard')

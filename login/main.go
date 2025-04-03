@@ -19,9 +19,11 @@ type User struct {
 var jwtSecret = []byte("secreto")
 
 type JWTClaims struct {
-	Username string `json:"username"`
+	Username string `json:"user"`
 	jwt.RegisteredClaims
 }
+
+var listUsers []User
 
 func generateToken(username string) (string, error) {
 	claims := &JWTClaims{
@@ -61,20 +63,46 @@ func main() {
 			// Guardar los claims en el contexto
 			claims := token.Claims.(*JWTClaims)
 			c.Set("username", claims.Username)
+			isAuth := false
 
-			return next(c)
+			for _, user := range listUsers {
+				fmt.Println(user)
+				if user.Name == claims.Username {
+					isAuth = true
+					break
+				}
+
+			}
+
+			if isAuth {
+				return next(c)
+			} else {
+				return echo.NewHTTPError(http.StatusUnauthorized, "User invalido")
+			}
 		}
 	}
 
-	server.POST("/login", func(c echo.Context) error {
-		fmt.Println("aki")
+	api := server.Group("/api")
+
+	api.POST("/register", func(c echo.Context) error {
+
+		var user User
+		if err := c.Bind(&user); err != nil {
+			return c.JSON(http.StatusBadRequest, echo.Map{"error": "Datos inválidos"})
+		}
+		listUsers = append(listUsers, user)
+
+		fmt.Println(user)
+
+		return c.JSON(http.StatusCreated, echo.Map{"msj": "User creado"})
+	})
+
+	api.POST("/login", func(c echo.Context) error {
 		new_user := new(User)
-		fmt.Println(new_user)
 
 		if err := c.Bind(new_user); err != nil {
 			return c.JSON(http.StatusBadRequest, echo.Map{"error": "Datos inválidos"})
 		}
-		fmt.Println(new_user)
 
 		token, err := generateToken(new_user.Name)
 
@@ -84,9 +112,8 @@ func main() {
 		return c.JSON(http.StatusOK, map[string]string{"token": token})
 	})
 
-	server.POST("/user", func(c echo.Context) error {
+	api.POST("/user", func(c echo.Context) error {
 		user_name := c.Get("username").(string)
-		fmt.Println(user_name)
 
 		return c.JSON(http.StatusCreated, user_name)
 	}, testMidlle)
