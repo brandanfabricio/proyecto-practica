@@ -30,20 +30,10 @@ func (l *ListaPuntero) Insertar(x TipoElemento, posicion int) {
 
 	for actual.sig != nil {
 		actual = actual.sig
-		fmt.Println(actual.elementos)
 	}
-
-	fmt.Println("##############")
 	nuevoNodo := NewListPuntero()
 	nuevoNodo.elementos = x
-
-	// fmt.Println("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
-	// fmt.Println(nuevoNodo.elementos)
-	// fmt.Println(nuevoNodo.sig)
-	// fmt.Println("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
-
 	actual.sig = nuevoNodo
-
 }
 
 func (l *ListaPuntero) ImprimirList() {
@@ -52,7 +42,31 @@ func (l *ListaPuntero) ImprimirList() {
 		for actual != nil {
 			fmt.Print(actual.elementos, " -> ")
 			actual = actual.sig
+
+			if actual == nil {
+				return
+			}
 		}
 	}
-	fmt.Println("nil")
+}
+
+func (l *ListaPuntero) SUPRIME(posicion int) {
+
+	actual := l
+	count := 0
+
+	for actual.sig != nil {
+
+		fmt.Println("-> ", actual.elementos)
+
+		fmt.Print(count)
+		if count == posicion {
+			fmt.Println("aki")
+
+		}
+		actual = actual.sig
+		count++
+
+	}
+
 }
